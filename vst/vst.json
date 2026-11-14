@@ -2,7 +2,7 @@
  "name": "PotentialGrit",
  "vendor": "PotentialBreaks",
  "uid": "PbGr",
- "version": 1100,
+ "version": 1101,
  "so": "potentialgrit.so",
  "params": "params.json",
  "layout": "layout.conf",

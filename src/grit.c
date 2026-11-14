@@ -81,7 +81,7 @@ typedef struct {
     float s_mix, s_out;
     /* DUST */
     float d_env, d_gate, d_g, d_gstep, d_m, d_mstep, d_lp[2], d_hiss_hp[2], d_hiss_lp[2], d_rumble, d_crack, d_crack_sign;
-    float d_wbuf[2][WOB_LEN]; int d_wpos; float d_wow, d_flut, d_drift, d_drift_t; int d_drift_n;
+    float d_wbuf[2][WOB_LEN]; int d_wpos, d_wfill; float d_wow, d_flut, d_drift, d_drift_t; int d_drift_n;
     /* CRUSH */
     float c_hold[2], c_ph, c_lp[2];
     /* FILTER: TPT state-variable filter */
@@ -89,9 +89,10 @@ typedef struct {
     /* KILL: Linkwitz-Riley 24 dB/oct crossovers, each two Butterworth state-variable filters in a row */
     svf_t k_svf[2][8];
     /* ECHO */
-    float e_buf[2][ECHO_LEN]; int e_pos; float e_del, e_lp[2], e_hp[2];
+    float e_buf[2][ECHO_LEN]; int e_pos, e_fill;   /* e_fill: samples written since ECHO came on (older ones read as silence) */ float e_del, e_lp[2], e_hp[2];
     /* RING */
-    float r_ph, r_lfo;
+    float r_ph, r_lfo, r_c, r_s, r_inc;   /* the carrier as a rotating phasor (cos, sin) */
+    int r_n;
 } grit_t;
 
 static inline float frand(uint32_t *s) {   /* xorshift32 -> -1..1 */
@@ -107,12 +108,13 @@ static inline int is_option(int i) { return i == P_FX || i == P_FILT_MODE || i =
 static void fx_reset(grit_t *s, int fx) {
     switch (fx) {
     case FX_DUST:
-        s->d_env = 0; memset(s->d_lp, 0, sizeof s->d_lp); memset(s->d_wbuf, 0, sizeof s->d_wbuf);
+        s->d_env = 0; memset(s->d_lp, 0, sizeof s->d_lp); s->d_wfill = 0;   /* the wobble buffer is not cleared: d_wfill marks what is new */
         s->d_crack = 0; s->d_g = 0; s->d_gstep = 0; s->d_m = 0; s->d_mstep = 0; break;
     case FX_CRUSH: memset(s->c_hold, 0, sizeof s->c_hold); s->c_ph = 0; memset(s->c_lp, 0, sizeof s->c_lp); break;
     case FX_FILTER: memset(s->f_ic1, 0, sizeof s->f_ic1); memset(s->f_ic2, 0, sizeof s->f_ic2); break;
     case FX_KILL: memset(s->k_svf, 0, sizeof s->k_svf); break;
-    case FX_ECHO: memset(s->e_buf, 0, sizeof s->e_buf); memset(s->e_lp, 0, sizeof s->e_lp); memset(s->e_hp, 0, sizeof s->e_hp); s->e_del = 0; break;
+    case FX_ECHO: s->e_fill = 0; memset(s->e_lp, 0, sizeof s->e_lp); memset(s->e_hp, 0, sizeof s->e_hp); s->e_del = 0; break;
+    case FX_RING: s->r_c = 1; s->r_s = 0; s->r_n = 0; break;
     default: break;
     }
 }
@@ -357,6 +359,7 @@ static void fx_dust(grit_t *s, float *L, float *R, int n) {
         }
         /* wobble: a modulated delay */
         s->d_wbuf[0][s->d_wpos] = l; s->d_wbuf[1][s->d_wpos] = r;
+        if (s->d_wfill < WOB_LEN) s->d_wfill++;   /* samples written since DUST came on, this one included */
         float m = 0;
         if (depth > 0.01f) {
             if ((i & 7) == 0) {   /* the LFOs every 8 samples, ramped between */
@@ -375,8 +378,13 @@ static void fx_dust(grit_t *s, float *L, float *R, int n) {
         while (rp < 0) rp += WOB_LEN;
         int i0 = (int)rp, i1 = (i0 + 1) & (WOB_LEN - 1);
         float f = rp - (float)i0;
-        L[i] = s->d_wbuf[0][i0] + (s->d_wbuf[0][i1] - s->d_wbuf[0][i0]) * f;
-        R[i] = s->d_wbuf[1][i0] + (s->d_wbuf[1][i1] - s->d_wbuf[1][i0]) * f;
+        float l0 = s->d_wbuf[0][i0], l1 = s->d_wbuf[0][i1], r0 = s->d_wbuf[1][i0], r1 = s->d_wbuf[1][i1];
+        if (s->d_wfill < WOB_LEN) {   /* just after DUST came on: what wasn't written since reads as silence, like a cleared buffer */
+            if (((s->d_wpos - i0) & (WOB_LEN - 1)) >= s->d_wfill) l0 = r0 = 0;
+            if (((s->d_wpos - i1) & (WOB_LEN - 1)) >= s->d_wfill) l1 = r1 = 0;
+        }
+        L[i] = l0 + (l1 - l0) * f;
+        R[i] = r0 + (r1 - r0) * f;
         s->d_wpos = (s->d_wpos + 1) & (WOB_LEN - 1);
     }
 }
@@ -424,24 +432,36 @@ static void fx_filter(grit_t *s, float *L, float *R, int n) {
 
 static inline float band_gain(float db) { return db <= -39.5f ? 0.0f : powf(10.0f, db / 20.0f); }
 /* a Butterworth (k = sqrt 2) state-variable filter step: low-pass (hp = 0) or high-pass (hp = 1) output */
-static inline float svf2(svf_t *f, float x, float g, int hp) {
-    const float k = 1.41421356f, a1 = 1.0f / (1.0f + g * (g + k)), a2 = g * a1, a3 = g * a2;
+typedef struct { float a1, a2, a3; } svf_k;
+static inline svf_k svf_coef(float g) { svf_k c; c.a1 = 1.0f / (1.0f + g * (g + 1.41421356f)); c.a2 = g * c.a1; c.a3 = g * c.a2; return c; }
+static inline float svf2(svf_t *f, float x, svf_k q, int hp) {
+    const float k = 1.41421356f, a1 = q.a1, a2 = q.a2, a3 = q.a3;
     float v3 = x - f->ic2, v1 = a1 * f->ic1 + a2 * v3, v2 = f->ic2 + a2 * f->ic1 + a3 * v3;
     f->ic1 = 2 * v1 - f->ic1; f->ic2 = 2 * v2 - f->ic2;
     return hp ? x - k * v1 - v2 : v2;
 }
+/* one step giving both outputs: a crossover's first low-pass and high-pass stages see the same input, so they share it */
+static inline void svf2_both(svf_t *f, float x, svf_k q, float *lp, float *hp) {
+    const float k = 1.41421356f;
+    float v3 = x - f->ic2, v1 = q.a1 * f->ic1 + q.a2 * v3, v2 = f->ic2 + q.a2 * f->ic1 + q.a3 * v3;
+    f->ic1 = 2 * v1 - f->ic1; f->ic2 = 2 * v2 - f->ic2;
+    *lp = v2; *hp = x - k * v1 - v2;
+}
 static void fx_kill(grit_t *s, float *L, float *R, int n) {
     float gl = band_gain(s->p[P_KILL_LOW]), gm = band_gain(s->p[P_KILL_MID]), gh = band_gain(s->p[P_KILL_HIGH]);
-    const float g1 = tanf(PI_F * 250.0f / FS), g2 = tanf(PI_F * 3000.0f / FS);
+    const svf_k g1 = svf_coef(tanf(PI_F * 250.0f / FS)), g2 = svf_coef(tanf(PI_F * 3000.0f / FS));
     for (int i = 0; i < n; i++) {
         float *x[2] = {&L[i], &R[i]};
         for (int c = 0; c < 2; c++) {
             svf_t *f = s->k_svf[c];
             float v = *x[c];
-            float lo = svf2(&f[1], svf2(&f[0], v, g1, 0), g1, 0);       /* below 250 Hz */
-            float rest = svf2(&f[3], svf2(&f[2], v, g1, 1), g1, 1);     /* above it */
-            float mid = svf2(&f[5], svf2(&f[4], rest, g2, 0), g2, 0);   /* 250 Hz - 3 kHz */
-            float hi = svf2(&f[7], svf2(&f[6], rest, g2, 1), g2, 1);    /* above 3 kHz */
+            float l1, h1, l2, h2;
+            svf2_both(&f[0], v, g1, &l1, &h1);                          /* 250 Hz: the shared first stage */
+            float lo = svf2(&f[1], l1, g1, 0);                          /* below 250 Hz */
+            float rest = svf2(&f[3], h1, g1, 1);                        /* above it */
+            svf2_both(&f[4], rest, g2, &l2, &h2);                       /* 3 kHz: the shared first stage */
+            float mid = svf2(&f[5], l2, g2, 0);                         /* 250 Hz - 3 kHz */
+            float hi = svf2(&f[7], h2, g2, 1);                          /* above 3 kHz */
             *x[c] = lo * gl + mid * gm + hi * gh;
         }
     }
@@ -461,8 +481,16 @@ static void fx_echo(grit_t *s, float *L, float *R, int n) {
         int i0 = (int)rp, i1 = i0 + 1 >= ECHO_LEN ? 0 : i0 + 1;
         float f = rp - (float)i0;
         float in[2] = {L[i], R[i]}, out[2];
+        int ok0 = 1, ok1 = 1;
+        if (s->e_fill < ECHO_LEN) {   /* just after ECHO came on: what wasn't written since reads as silence, like a cleared buffer */
+            int a0 = s->e_pos - i0, a1 = s->e_pos - i1;
+            if (a0 <= 0) a0 += ECHO_LEN;
+            if (a1 <= 0) a1 += ECHO_LEN;
+            ok0 = a0 <= s->e_fill; ok1 = a1 <= s->e_fill;
+        }
         for (int c = 0; c < 2; c++) {
-            float e = s->e_buf[c][i0] + (s->e_buf[c][i1] - s->e_buf[c][i0]) * f;
+            float b0 = ok0 ? s->e_buf[c][i0] : 0.0f, b1 = ok1 ? s->e_buf[c][i1] : 0.0f;
+            float e = b0 + (b1 - b0) * f;
             s->e_lp[c] += (e - s->e_lp[c]) * lp;
             s->e_hp[c] += (s->e_lp[c] - s->e_hp[c]) * hp;
             float wet = s->e_lp[c] - s->e_hp[c];
@@ -471,6 +499,7 @@ static void fx_echo(grit_t *s, float *L, float *R, int n) {
         }
         L[i] = out[0]; R[i] = out[1];
         if (++s->e_pos >= ECHO_LEN) s->e_pos = 0;
+        if (s->e_fill < ECHO_LEN) s->e_fill++;
     }
 }
 
@@ -480,14 +509,15 @@ static void fx_chop(grit_t *s, float *L, float *R, int n) {
     double bps = (double)s->bpm / 60.0 / FS;
     double beats = s->playing ? s->ppq : s->free_beats;   /* follows the song while MPC plays, its own clock otherwise */
     double ramp = 0.0025 * s->bpm / 60.0 / step;          /* ~2.5 ms edges, as a fraction of a step */
+    double pos0 = beats / step;
+    long idx = (long)floor(pos0);
+    float ph = (float)(pos0 - (double)idx), dph = (float)(bps / step), fr = (float)ramp, inv_r = 1.0f / fr;
     for (int i = 0; i < n; i++) {
-        double pos = (beats + i * bps) / step;
-        double ph = pos - floor(pos);
-        long idx = (long)floor(pos);
-        double gate = ph < 0.55 ? 1.0 : 0.0;
-        if (ph < ramp) gate = ph / ramp;
-        else if (ph >= 0.55 && ph < 0.55 + ramp) gate = 1.0 - (ph - 0.55) / ramp;
-        float g = 1.0f - depth * (1.0f - (float)gate);
+        if (i) { ph += dph; if (ph >= 1.0f) { ph -= 1.0f; idx++; } }
+        float gate = ph < 0.55f ? 1.0f : 0.0f;
+        if (ph < fr) gate = ph * inv_r;
+        else if (ph >= 0.55f && ph < 0.55f + fr) gate = 1.0f - (ph - 0.55f) * inv_r;
+        float g = 1.0f - depth * (1.0f - gate);
         float gl = g, gr = g;
         if (idx & 1) gl *= 1.0f - pan; else gr *= 1.0f - pan;
         L[i] *= gl; R[i] *= gr;
@@ -498,15 +528,22 @@ static void fx_chop(grit_t *s, float *L, float *R, int n) {
 static void fx_ring(grit_t *s, float *L, float *R, int n) {
     float base = ring_hz(s->p[P_RING_FREQ]), sweep = s->p[P_RING_SWEEP] / 100.0f;
     float lfo_inc = 2 * PI_F * speed_hz(s->p[P_RING_SPEED]) / FS;
-    float inc = 0;
+    float rc = 1, rs = 0;
+    if (s->r_c == 0 && s->r_s == 0) s->r_c = 1;
     for (int i = 0; i < n; i++) {
-        if ((i & 15) == 0) {   /* the sweep every 16 samples */
+        if ((s->r_n++ & 15) == 0) {   /* the sweep every 16 samples: the step's cos and sin, and the phasor back to length 1 */
             s->r_lfo += 16 * lfo_inc; if (s->r_lfo > 2 * PI_F) s->r_lfo -= 2 * PI_F;
-            inc = 2 * PI_F * base * exp2f(2.0f * sweep * sinf(s->r_lfo)) / FS;
+            float inc = 2 * PI_F * base * exp2f(2.0f * sweep * sinf(s->r_lfo)) / FS;
+            rc = cosf(inc); rs = sinf(inc); s->r_inc = inc;
+            float m = s->r_c * s->r_c + s->r_s * s->r_s;
+            m = 1.5f - 0.5f * m;   /* one Newton step towards 1/sqrt(m): m stays within a hair of 1 */
+            s->r_c *= m; s->r_s *= m;
+        } else if (i == 0) {
+            rc = cosf(s->r_inc); rs = sinf(s->r_inc);   /* a block starting between updates */
         }
-        s->r_ph += inc; if (s->r_ph > 2 * PI_F) s->r_ph -= 2 * PI_F;
-        float c = sinf(s->r_ph);
-        L[i] *= c; R[i] *= c;
+        float c = s->r_c * rc - s->r_s * rs, sn = s->r_s * rc + s->r_c * rs;
+        s->r_c = c; s->r_s = sn;
+        L[i] *= sn; R[i] *= sn;
     }
 }
 
