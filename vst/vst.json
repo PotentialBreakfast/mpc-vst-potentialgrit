@@ -1,0 +1,29 @@
+{
+ "name": "PotentialGrit",
+ "vendor": "PotentialBreaks",
+ "uid": "PbGr",
+ "version": 1000,
+ "so": "potentialgrit.so",
+ "params": "params.json",
+ "layout": "layout.conf",
+ "effect": true,
+ "presets": "presets.json",
+ "build": {
+  "root": "..",
+  "sources": [
+   "src/grit.c"
+  ],
+  "cflags": [
+   "-ffast-math"
+  ],
+  "libs": [
+   "-lm"
+  ]
+ },
+ "art": "html",
+ "nrpn": false,
+ "defines": {
+  "MODULE_SUBDIR": "\".\"",
+  "HAS_SONG_POS": 1
+ }
+}

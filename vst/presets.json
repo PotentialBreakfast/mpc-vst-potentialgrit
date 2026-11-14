@@ -1,0 +1,160 @@
+{
+ "presets": [
+  {
+   "name": "Dusty drum bus",
+   "values": {
+    "fx": "DUST",
+    "mix": 100,
+    "output": 0,
+    "dust_comp": 75,
+    "dust_noise": 15,
+    "dust_wobble": 10
+   }
+  },
+  {
+   "name": "Worn record",
+   "values": {
+    "fx": "DUST",
+    "mix": 100,
+    "output": 0,
+    "dust_comp": 50,
+    "dust_noise": 55,
+    "dust_wobble": 45
+   }
+  },
+  {
+   "name": "12-bit grit",
+   "values": {
+    "fx": "CRUSH",
+    "mix": 100,
+    "output": 0,
+    "crush_bits": 12,
+    "crush_rate": 72,
+    "crush_tone": 55
+   }
+  },
+  {
+   "name": "Broken",
+   "values": {
+    "fx": "CRUSH",
+    "mix": 50,
+    "output": 0,
+    "crush_bits": 5,
+    "crush_rate": 35,
+    "crush_tone": 40
+   }
+  },
+  {
+   "name": "Next room",
+   "values": {
+    "fx": "FILTER",
+    "mix": 100,
+    "output": 0,
+    "filt_mode": "LOW PASS",
+    "filt_cutoff": 42,
+    "filt_res": 10,
+    "filt_drive": 20
+   }
+  },
+  {
+   "name": "Telephone",
+   "values": {
+    "fx": "KILL",
+    "mix": 100,
+    "output": 0,
+    "kill_low": -40,
+    "kill_mid": 3,
+    "kill_high": -40
+   }
+  },
+  {
+   "name": "Dub throw",
+   "values": {
+    "fx": "ECHO",
+    "mix": 100,
+    "output": 0,
+    "echo_time": "1/4",
+    "echo_fb": 60,
+    "echo_level": 60
+   }
+  },
+  {
+   "name": "Stutter",
+   "values": {
+    "fx": "CHOP",
+    "mix": 100,
+    "output": 0,
+    "chop_rate": "1/16",
+    "chop_depth": 100,
+    "chop_pan": 0
+   }
+  },
+  {
+   "name": "Ping-pong chop",
+   "values": {
+    "fx": "CHOP",
+    "mix": 100,
+    "output": 0,
+    "chop_rate": "1/8",
+    "chop_depth": 70,
+    "chop_pan": 100
+   }
+  },
+  {
+   "name": "Metal",
+   "values": {
+    "fx": "RING",
+    "mix": 40,
+    "output": 0,
+    "ring_freq": 75,
+    "ring_sweep": 20,
+    "ring_speed": 35
+   }
+  },
+  {
+   "name": "Dusty Loop",
+   "values": {
+    "fx": "FILTER",
+    "filt_mode": "LOW PASS",
+    "filt_cutoff": 75,
+    "filt_res": 10,
+    "filt_drive": 20,
+    "mix": 100,
+    "output": 0
+   }
+  },
+  {
+   "name": "90s Stab",
+   "values": {
+    "fx": "CRUSH",
+    "crush_bits": 12,
+    "crush_rate": 84,
+    "crush_tone": 55,
+    "mix": 100,
+    "output": 0
+   }
+  },
+  {
+   "name": "Break Bus",
+   "values": {
+    "fx": "DUST",
+    "dust_comp": 75,
+    "dust_noise": 15,
+    "dust_wobble": 10,
+    "mix": 100,
+    "output": 0
+   }
+  },
+  {
+   "name": "Dub Drums",
+   "values": {
+    "fx": "ECHO",
+    "echo_time": "1/8D",
+    "echo_fb": 45,
+    "echo_level": 35,
+    "mix": 100,
+    "output": 0
+   }
+  }
+ ]
+}

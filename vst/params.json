@@ -1,0 +1,250 @@
+{
+  "name": "PotentialGrit",
+  "params": [
+    {
+      "key": "mix",
+      "name": "Mix",
+      "min": 0,
+      "max": 100,
+      "default": 100,
+      "unit": "%"
+    },
+    {
+      "key": "output",
+      "name": "Output",
+      "min": -24,
+      "max": 12,
+      "default": 0,
+      "unit": "dB"
+    },
+    {
+      "key": "fx",
+      "name": "Effect",
+      "options": [
+        "DUST",
+        "CRUSH",
+        "FILTER",
+        "KILL",
+        "ECHO",
+        "CHOP",
+        "RING"
+      ],
+      "default": "DUST"
+    },
+    {
+      "key": "dust_comp",
+      "name": "Dust Comp",
+      "min": 0,
+      "max": 100,
+      "default": 60,
+      "unit": "%"
+    },
+    {
+      "key": "dust_noise",
+      "name": "Dust Noise",
+      "min": 0,
+      "max": 100,
+      "default": 30,
+      "unit": "%"
+    },
+    {
+      "key": "dust_wobble",
+      "name": "Dust Wobble",
+      "min": 0,
+      "max": 100,
+      "default": 25,
+      "unit": "%"
+    },
+    {
+      "key": "crush_bits",
+      "name": "Crush Bits",
+      "min": 2,
+      "max": 16,
+      "default": 10,
+      "display": "int"
+    },
+    {
+      "key": "crush_rate",
+      "name": "Crush Rate",
+      "min": 0,
+      "max": 100,
+      "default": 62,
+      "dynamic_display": true
+    },
+    {
+      "key": "crush_tone",
+      "name": "Crush Tone",
+      "min": 0,
+      "max": 100,
+      "default": 60,
+      "unit": "%"
+    },
+    {
+      "key": "filt_mode",
+      "name": "Filter Mode",
+      "options": [
+        "LOW PASS",
+        "BAND PASS",
+        "HIGH PASS"
+      ],
+      "default": "LOW PASS"
+    },
+    {
+      "key": "filt_cutoff",
+      "name": "Filter Cutoff",
+      "min": 0,
+      "max": 100,
+      "default": 62,
+      "dynamic_display": true
+    },
+    {
+      "key": "filt_res",
+      "name": "Filter Res",
+      "min": 0,
+      "max": 100,
+      "default": 30,
+      "unit": "%"
+    },
+    {
+      "key": "filt_drive",
+      "name": "Filter Drive",
+      "min": 0,
+      "max": 100,
+      "default": 35,
+      "unit": "%"
+    },
+    {
+      "key": "kill_low",
+      "name": "Kill Low",
+      "min": -40,
+      "max": 6,
+      "default": 0,
+      "dynamic_display": true
+    },
+    {
+      "key": "kill_mid",
+      "name": "Kill Mid",
+      "min": -40,
+      "max": 6,
+      "default": 0,
+      "dynamic_display": true
+    },
+    {
+      "key": "kill_high",
+      "name": "Kill High",
+      "min": -40,
+      "max": 6,
+      "default": 0,
+      "dynamic_display": true
+    },
+    {
+      "key": "echo_time",
+      "name": "Echo Time",
+      "options": [
+        "1/16",
+        "1/8T",
+        "1/8",
+        "1/8D",
+        "1/4",
+        "1/4D",
+        "1/2"
+      ],
+      "default": "1/8D"
+    },
+    {
+      "key": "echo_fb",
+      "name": "Echo Feedback",
+      "min": 0,
+      "max": 95,
+      "default": 40,
+      "unit": "%"
+    },
+    {
+      "key": "echo_level",
+      "name": "Echo Level",
+      "min": 0,
+      "max": 100,
+      "default": 50,
+      "unit": "%"
+    },
+    {
+      "key": "chop_rate",
+      "name": "Chop Rate",
+      "options": [
+        "1/4",
+        "1/8",
+        "1/8T",
+        "1/16",
+        "1/16T",
+        "1/32"
+      ],
+      "default": "1/16"
+    },
+    {
+      "key": "chop_depth",
+      "name": "Chop Depth",
+      "min": 0,
+      "max": 100,
+      "default": 100,
+      "unit": "%"
+    },
+    {
+      "key": "chop_pan",
+      "name": "Chop Pan",
+      "min": 0,
+      "max": 100,
+      "default": 0,
+      "unit": "%"
+    },
+    {
+      "key": "ring_freq",
+      "name": "Ring Freq",
+      "min": 0,
+      "max": 100,
+      "default": 62,
+      "dynamic_display": true
+    },
+    {
+      "key": "ring_sweep",
+      "name": "Ring Sweep",
+      "min": 0,
+      "max": 100,
+      "default": 0,
+      "unit": "%"
+    },
+    {
+      "key": "ring_speed",
+      "name": "Ring Speed",
+      "min": 0,
+      "max": 100,
+      "default": 43,
+      "dynamic_display": true
+    },
+    {
+      "key": "theme",
+      "name": "Look",
+      "options": [
+        "Print Plate",
+        "Night Rack",
+        "Colour Block"
+      ],
+      "default": 0
+    },
+    {
+      "key": "dice",
+      "name": "Roll",
+      "type": "trigger",
+      "momentary": true
+    },
+    {
+      "key": "wild",
+      "name": "Roll Wildness",
+      "options": [
+        "MILD",
+        "MEDIUM",
+        "WILD"
+      ],
+      "default": "MEDIUM"
+    }
+  ]
+}
