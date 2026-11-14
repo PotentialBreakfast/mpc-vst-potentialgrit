@@ -1,0 +1,61 @@
+= START
+# PotentialGrit: seven lo-fi effects in one box
+Dust, crush, filter, kill, echo, chop and ring. Pick one from the pads, shape it with its own knobs, and blend it with MIX.
+
+- Add it as an insert effect on a track, program, pad or bus. It is not in the instrument list.
+- Tap a pad to pick an effect. Each effect keeps its own settings, so you can flip between them and come back.
+- Switching crossfades, so it does not click.
+- MIX blends the original (0 %) with the effect (100 %). OUTPUT runs from -24 to +12 dB.
+
+The full PotentialSuite manual: github.com/PotentialBreakfast/potential-plugins
+
+= EFFECTS
+# The seven effects
+- DUST: glue compression, soft saturation and a darker top, with hiss, crackle and rumble that follow the music, and wobble. COMP, NOISE, WOBBLE.
+- CRUSH: bit depth and sample-rate reduction like an early sampler. BITS (2 to 16), RATE (1.5 to 44.1 kHz), TONE.
+- FILTER: a resonant LOW, BAND or HIGH PASS filter into a saturator. CUTOFF, RESONANCE, DRIVE.
+- KILL: a DJ-style three-band kill EQ: below 250 Hz, 250 Hz to 3 kHz, above 3 kHz. LOW, MID, HIGH.
+- ECHO: a dark tape echo locked to your tempo, 1/16 to 1/2 with triplet and dotted times. FEEDBACK, LEVEL.
+- CHOP: a tempo gate that follows the song position, 1/4 to 1/32 with triplets. DEPTH, PAN (left/right bounce).
+- RING: ring modulation by a tone that an LFO can sweep two octaves each way. FREQ, SWEEP, SPEED.
+
+= PRESETS
+# Presets and ROLL
+- MPC's PRESET menu: Dusty drum bus, Worn record, 12-bit grit, Broken, Next room, Telephone, Dub throw, Stutter, Ping-pong chop and Metal, then the four chain presets.
+- ROLL gives the effect that is on new settings. MILD, MEDIUM or WILD sets how far it goes, and WILD sometimes picks another effect too.
+- Chain presets: Dusty Loop, 90s Stab, Break Bus and Dub Drums. See the CHAINS page.
+
+Match levels with OUTPUT before you judge a setting.
+
+= CHAINS
+# FX chains
+Put the plugins on a track's inserts in the order shown, then pick the same preset name in each one.
+
+- DUSTY LOOP (soul, jazz and library loops): Bleed > Patina > GRIT. Grit is a low-pass FILTER near 4 kHz.
+- 90s STAB (chopped horns, keys and vocal stabs): GRIT > Punch > Bleed > Patina. Grit is a 12-bit CRUSH.
+- BREAK BUS (a boom-bap drum bus): Punch > GRIT > Bleed > Patina. Grit is DUST.
+- DUB DRUMS (lo-fi dub drums): Patina > Punch > Bleed > GRIT. Grit is a dotted-eighth ECHO.
+
+Here, in Patina and in Bleed the name is in the MPC's PRESET menu. In Punch it is on the PRESETS buttons.
+
+Rules of thumb: Punch early, Bleed before Patina, echo and chop last, one noise source per chain, and match levels with OUTPUT before you decide.
+
+= USER
+# User presets
+- To save: open the USER page, tap SAVE, then tap a slot. The slot now reads USER and its number.
+- To load: tap a slot. The slot you loaded last is lit.
+- Saving to a slot that is already filled replaces it straight away.
+- The 8 slots are kept on the drive the plugin is on, in a folder called PotentialSuite Presets. Every project and every copy of the plugin sees them, and updating the plugin keeps them.
+- A slot keeps the effect that is on and the settings of all seven.
+- A chain of your own: save each plugin's part to the same slot number, for example USER 3 in Punch, Grit and Bleed. Later, tap USER 3 in each.
+
+= HELP
+# Good to know
+- Q-Links: the effect, MIX and OUTPUT, then the knobs of the effects.
+- Every setting is saved with your project.
+- Looks: Print Plate, Night Rack or Colour Block, on the SETTINGS page. A new look shows the next time the plugin loads.
+- ECHO and CHOP follow the project tempo. CHOP lines up with the bar while the MPC plays.
+- In ECHO the dry sound always passes through.
+- Stereo in, stereo out, at 44.1 kHz.
+
+Ideas, bugs and criticism are all welcome: github.com/PotentialBreakfast/mpc-vst-potentialgrit

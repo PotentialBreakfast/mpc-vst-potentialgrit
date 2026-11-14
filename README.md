@@ -4,7 +4,7 @@
 
 ![PotentialGrit on the MPC (Print Plate look)](docs/images/potentialgrit.png)
 
-*Insert effect · MPC OS 3.x · Gen1 and Gen2 · v1.0.1*
+*Insert effect · MPC OS 3.x · Gen1 and Gen2 · v1.1.0*
 
 Free and open source (MIT), made by **PotentialBreaks**, part of the **PotentialSuite**, with the same three looks and LOOK switch as the rest of the suite. It runs inside the MPC as an insert effect, with its own touchscreen page, Q-Link control and project recall.
 
@@ -32,6 +32,10 @@ Plus:
 - **FX chains:** Dusty Loop, 90s Stab, Break Bus and Dub Drums. Pick the same name in PotentialPatina, PotentialPunch and PotentialBleed. See the [chains on the PotentialSuite page](https://github.com/PotentialBreakfast/potential-plugins#fx-chains).
 
 ![The ECHO pad (Night Rack look)](docs/images/potentialgrit-echo.png)
+
+**USER presets** (USER page): 8 slots of your own. Tap **SAVE**, then a slot, to keep the sound; tap a slot to bring it back. They're kept in `PotentialSuite Presets/PotentialGrit.txt` beside your VST2 Plugins folder, so every project sees them and updates keep them. The same slot number in each PotentialSuite effect makes a chain of your own.
+
+**MANUAL page:** the manual is on the MPC's screen too. Tap **MANUAL**, then the page buttons along the top. The full [PotentialSuite manual](https://github.com/PotentialBreakfast/potential-plugins/blob/main/MANUAL.md) covers every plugin, the FX chains and a developer reference.
 
 ## Install
 
