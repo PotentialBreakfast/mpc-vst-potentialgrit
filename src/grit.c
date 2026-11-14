@@ -76,7 +76,7 @@ typedef struct {
     int cur, prev, xf;           /* xf: samples left in the crossfade from prev to cur */
     float s_mix, s_out;
     /* DUST */
-    float d_env, d_gate, d_lp[2], d_hiss_hp[2], d_hiss_lp[2], d_rumble, d_crack, d_crack_sign;
+    float d_env, d_gate, d_g, d_gstep, d_m, d_mstep, d_lp[2], d_hiss_hp[2], d_hiss_lp[2], d_rumble, d_crack, d_crack_sign;
     float d_wbuf[2][WOB_LEN]; int d_wpos; float d_wow, d_flut, d_drift, d_drift_t; int d_drift_n;
     /* CRUSH */
     float c_hold[2], c_ph, c_lp[2];
@@ -104,7 +104,7 @@ static void fx_reset(grit_t *s, int fx) {
     switch (fx) {
     case FX_DUST:
         s->d_env = 0; memset(s->d_lp, 0, sizeof s->d_lp); memset(s->d_wbuf, 0, sizeof s->d_wbuf);
-        s->d_crack = 0; break;
+        s->d_crack = 0; s->d_g = 0; s->d_gstep = 0; s->d_m = 0; s->d_mstep = 0; break;
     case FX_CRUSH: memset(s->c_hold, 0, sizeof s->c_hold); s->c_ph = 0; memset(s->c_lp, 0, sizeof s->c_lp); break;
     case FX_FILTER: memset(s->f_ic1, 0, sizeof s->f_ic1); memset(s->f_ic2, 0, sizeof s->f_ic2); break;
     case FX_KILL: memset(s->k_svf, 0, sizeof s->k_svf); break;
@@ -278,7 +278,13 @@ static void render(void *inst, int16_t *out_lr, int frames) {   /* an effect: si
     memset(out_lr, 0, (size_t)frames * 2 * sizeof(int16_t));
 }
 
-static inline float sat(float x) { return tanhf(x); }
+/* tanh, closely enough (a Pade approximation, exact at 0 and smooth to +-1 at |x| = 3): tanhf costs far more on the MPC's ARM */
+static inline float sat(float x) {
+    if (x > 3.0f) return 1.0f;
+    if (x < -3.0f) return -1.0f;
+    float x2 = x * x;
+    return x * (27.0f + x2) / (27.0f + 9.0f * x2);
+}
 
 /* ---- the seven effects: one block of stereo float in place (x[2][n]) ---- */
 static void fx_dust(grit_t *s, float *L, float *R, int n) {
@@ -301,8 +307,14 @@ static void fx_dust(grit_t *s, float *L, float *R, int n) {
         if (a > 3e-4f) s->d_gate += (1.0f - s->d_gate) * gate_up;
         else if ((s->d_gate -= gate_down) < 0) s->d_gate = 0;
         s->d_env += (a - s->d_env) * (a > s->d_env ? atk : rel);
-        float env_db = 20.0f * log10f(s->d_env + 1e-6f), gr_db = env_db > thr_db ? (env_db - thr_db) * (1.0f - 1.0f / ratio) : 0;
-        float g = powf(10.0f, -gr_db / 20.0f) * makeup;
+        if ((i & 7) == 0) {   /* the gain in dB every 8 samples, ramped between: log and pow per sample are heavy on the MPC */
+            float env_db = 20.0f * log10f(s->d_env + 1e-6f), gr_db = env_db > thr_db ? (env_db - thr_db) * (1.0f - 1.0f / ratio) : 0;
+            float target = powf(10.0f, -gr_db / 20.0f) * makeup;
+            if (s->d_g <= 0) s->d_g = target;
+            s->d_gstep = (target - s->d_g) * 0.125f;
+        }
+        s->d_g += s->d_gstep;
+        float g = s->d_g;
         l = sat(l * g * drive) * norm; r = sat(r * g * drive) * norm;
         s->d_lp[0] += (l - s->d_lp[0]) * dark; s->d_lp[1] += (r - s->d_lp[1]) * dark;
         l = s->d_lp[0]; r = s->d_lp[1];
@@ -327,11 +339,16 @@ static void fx_dust(grit_t *s, float *L, float *R, int n) {
         s->d_wbuf[0][s->d_wpos] = l; s->d_wbuf[1][s->d_wpos] = r;
         float m = 0;
         if (depth > 0.01f) {
-            s->d_wow += wow_inc; if (s->d_wow > 2 * PI_F) s->d_wow -= 2 * PI_F;
-            s->d_flut += flut_inc; if (s->d_flut > 2 * PI_F) s->d_flut -= 2 * PI_F;
-            if (--s->d_drift_n <= 0) { s->d_drift_t = frand(&s->rng); s->d_drift_n = 22050; }
-            s->d_drift += (s->d_drift_t - s->d_drift) * 0.00005f;
-            m = depth * (0.7f * sinf(s->d_wow) + 0.12f * sinf(s->d_flut) + 0.3f * s->d_drift);
+            if ((i & 7) == 0) {   /* the LFOs every 8 samples, ramped between */
+                s->d_wow += 8 * wow_inc; if (s->d_wow > 2 * PI_F) s->d_wow -= 2 * PI_F;
+                s->d_flut += 8 * flut_inc; if (s->d_flut > 2 * PI_F) s->d_flut -= 2 * PI_F;
+                if ((s->d_drift_n -= 8) <= 0) { s->d_drift_t = frand(&s->rng); s->d_drift_n = 22050; }
+                s->d_drift += (s->d_drift_t - s->d_drift) * 0.0004f;
+                float target = depth * (0.7f * sinf(s->d_wow) + 0.12f * sinf(s->d_flut) + 0.3f * s->d_drift);
+                s->d_mstep = (target - s->d_m) * 0.125f;
+            }
+            s->d_m += s->d_mstep;
+            m = s->d_m;
         }
         float d = 8.0f + depth + m;   /* the fixed part keeps the read behind the write */
         float rp = (float)s->d_wpos - d;
@@ -366,10 +383,14 @@ static void fx_filter(grit_t *s, float *L, float *R, int n) {
     float k = 2.0f - 1.96f * res;                     /* damping: 2 = none, ~0.04 = near self-oscillation */
     float drive = 1.0f + 6.0f * s->p[P_FILT_DRIVE] / 100.0f, norm = 1.0f / sqrtf(drive);
     float in_g = 1.0f - 0.45f * res;                 /* keep the peak in check as the resonance rises */
+    float a1 = 0, a2 = 0, a3 = 0;
     for (int i = 0; i < n; i++) {
-        if ((i & 15) == 0) s->f_cut += (target - s->f_cut) * 0.25f;   /* glide, no zipper noise */
-        float fc = s->f_cut > 18000.0f ? 18000.0f : s->f_cut;
-        float g = tanf(PI_F * fc / FS), a1 = 1.0f / (1.0f + g * (g + k)), a2 = g * a1, a3 = g * a2;
+        if ((i & 15) == 0) {   /* glide, no zipper noise; the coefficients (tanf) every 16 samples */
+            s->f_cut += (target - s->f_cut) * 0.25f;
+            float fc = s->f_cut > 18000.0f ? 18000.0f : s->f_cut;
+            float g = tanf(PI_F * fc / FS);
+            a1 = 1.0f / (1.0f + g * (g + k)); a2 = g * a1; a3 = g * a2;
+        }
         float *x[2] = {&L[i], &R[i]};
         for (int c = 0; c < 2; c++) {
             float v0 = *x[c] * in_g;
@@ -457,10 +478,13 @@ static void fx_chop(grit_t *s, float *L, float *R, int n) {
 static void fx_ring(grit_t *s, float *L, float *R, int n) {
     float base = ring_hz(s->p[P_RING_FREQ]), sweep = s->p[P_RING_SWEEP] / 100.0f;
     float lfo_inc = 2 * PI_F * speed_hz(s->p[P_RING_SPEED]) / FS;
+    float inc = 0;
     for (int i = 0; i < n; i++) {
-        s->r_lfo += lfo_inc; if (s->r_lfo > 2 * PI_F) s->r_lfo -= 2 * PI_F;
-        float f = base * exp2f(2.0f * sweep * sinf(s->r_lfo));
-        s->r_ph += 2 * PI_F * f / FS; if (s->r_ph > 2 * PI_F) s->r_ph -= 2 * PI_F;
+        if ((i & 15) == 0) {   /* the sweep every 16 samples */
+            s->r_lfo += 16 * lfo_inc; if (s->r_lfo > 2 * PI_F) s->r_lfo -= 2 * PI_F;
+            inc = 2 * PI_F * base * exp2f(2.0f * sweep * sinf(s->r_lfo)) / FS;
+        }
+        s->r_ph += inc; if (s->r_ph > 2 * PI_F) s->r_ph -= 2 * PI_F;
         float c = sinf(s->r_ph);
         L[i] *= c; R[i] *= c;
     }
