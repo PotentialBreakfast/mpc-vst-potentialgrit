@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.1.2 (2026-11-14)
+- **Fixed: SAVE, then a USER slot, saved nothing.** One touch on the SAVE button reaches the plugin as two quick flips (on, then straight back off), so SAVE switched itself off before you tapped a slot. The second flip is now ignored: SAVE stays lit ("NOW TAP A SLOT") until you tap a slot, empty or full. Tap SAVE again to cancel.
+- Sound, controls, saved projects and your USER slots are unchanged.
+
 ## 1.1.1 (2026-11)
 - **Lighter on the CPU, without the spikes.** 1.1.0 measured 10.9 % of an audio block (99th percentile) and 28 % at worst on an MPC One. Almost all of that came from one thing: switching to ECHO cleared its 3-second (1 MB) echo memory in a single audio block. Grit now marks the old echo as silent instead of clearing it, so switching effects costs next to nothing. Re-run TEST in MPC TOOLS to see the new figure.
 - KILL does a quarter less work (its two crossovers share their first filter stage), RING turns its tone with a rotating phasor instead of a sine every sample, and CHOP keeps its own position instead of recalculating it every sample.
