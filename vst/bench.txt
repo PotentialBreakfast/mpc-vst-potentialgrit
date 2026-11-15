@@ -1,2 +1,2 @@
-# MPC TOOLS bench (Open MPC tools/bench.c -j) on an MPC One, MPC OS 3.10.1, MPC running, 2026-11-14, PotentialGrit 1.1.2
-{"plugin": "PotentialGrit", "instrument": 0, "open_ms": 1.7, "p99_pct": 3.0, "max_pct": 3.8, "threads_pct": 0.0, "verdict": "PASS", "triggers": 1, "trigger_max_pct": 3.0}
+# MPC TOOLS bench (Open MPC tools/bench.c -j) on an MPC One, MPC OS 3.10.1, MPC running, 2026-11-15, PotentialGrit 1.1.2
+{"plugin": "PotentialGrit", "instrument": 0, "open_ms": 1.4, "p99_pct": 3.2, "max_pct": 4.6, "threads_pct": 0.0, "verdict": "PASS", "triggers": 1, "trigger_max_pct": 2.9}
