@@ -53,7 +53,7 @@ Rules of thumb: Punch early, Bleed before Patina, echo and chop last, one noise 
 # Good to know
 - Q-Links: the effect, MIX and OUTPUT, then the knobs of the effects.
 - Every setting is saved with your project.
-- Looks: Print Plate, Night Rack, Colour Block or Vintage, on the SETTINGS page. A new look shows the next time the plugin loads.
+- Looks: Print Plate, Night Rack, Colour Block, Vintage or Hi-Fi, on the SETTINGS page. A new look shows the next time the plugin loads.
 - ECHO and CHOP follow the project tempo. CHOP lines up with the bar while the MPC plays.
 - In ECHO the dry sound always passes through.
 - Stereo in, stereo out, at 44.1 kHz.

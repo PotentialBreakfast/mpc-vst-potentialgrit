@@ -6,7 +6,7 @@
 
 *Insert effect · MPC OS 3.x · Gen1 and Gen2 · v1.2.0*
 
-Free and open source (MIT), made by **PotentialBreaks**, part of the **PotentialSuite**, with the same four looks and LOOK switch as the rest of the suite. It runs inside the MPC as an insert effect, with its own touchscreen page, Q-Link control and project recall.
+Free and open source (MIT), made by **PotentialBreaks**, part of the **PotentialSuite**, with the same five looks and LOOK switch as the rest of the suite. It runs inside the MPC as an insert effect, with its own touchscreen page, Q-Link control and project recall.
 
 **[Download the latest release](../../releases/latest)** · [Ideas and bugs](../../issues/new/choose)
 
